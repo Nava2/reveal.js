@@ -1,5 +1,43 @@
 // START CUSTOM REVEAL.JS INTEGRATION
 (function() {
+	const LINE_REGEX = /^\n*(\s*)\b/;
+	const SPACE_REGEX = /^(\s*)\b/;
+
+	function trimCodeElement( code ) {
+		// Shim that trims the leading \n and then trims the minimum amount of spaces from all of the lines
+		// in a code segment.
+	
+		let content = code.innerHTML;
+
+		let result = LINE_REGEX.exec(content);
+		if( result.length > 1 ) {
+			// trim data:
+			let lines = content.split('\n');
+
+			// Remove all of the empty lines
+			let i = 0;
+			while( lines[i].length === 0 ) {
+				i++;
+			}
+
+			lines.splice(0, i);
+
+			// Compute the maximum amount of trimming we can do
+			let trimLength = Number.MAX_SAFE_INTEGER;
+			lines.forEach(function( line ) {
+				let r = SPACE_REGEX.exec(line);
+				if (!!r && r.length > 1) {
+					trimLength = Math.min(trimLength, r[1].length);
+				}
+			});
+
+			// put all of the code back into the element.
+			code.innerHTML = lines.map(function( l ) {
+				return l.substr(trimLength);
+			}).join('\n');
+		}
+	}
+	
 	if( typeof window.addEventListener === 'function' ) {
 		var hljs_nodes = document.querySelectorAll( 'pre code' );
 
@@ -7,8 +45,8 @@
 			var element = hljs_nodes[i];
 
 			// trim whitespace if data-trim attribute is present
-			if( element.hasAttribute( 'data-trim' ) && typeof element.innerHTML.trim === 'function' ) {
-				element.innerHTML = element.innerHTML.trim();
+			if( element.hasAttribute( 'data-trim' )) {
+				trimCodeElement(element);
 			}
 
 			// Now escape html unless prevented by author
